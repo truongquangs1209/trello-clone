@@ -5,33 +5,20 @@ import { Draggable, Droppable } from "react-beautiful-dnd";
 import { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../firebase/config";
-import { getDocs, addDoc, collection } from "firebase/firestore";
+import {
+  getDocs,
+  addDoc,
+  collection,
+  doc,
+  deleteDoc,
+} from "firebase/firestore";
 
-function ListWrapper({ id, title, items }) {
+function ListWrapper({ id, title, items, setItems }) {
   const [data, setData] = useState([]);
   const [openTextArea, setOpenTextArea] = useState(false);
   const [titleText, setTitleText] = useState("");
 
-  useEffect(() => {
-    const fetchDataFromFirestore = async () => {
-      try {
-        const usersCollection = collection(db, "users");
-
-        const snapshot = await getDocs(usersCollection);
-        const dataArray = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-        setData(dataArray);
-      } catch (error) {
-        console.error("error getting document", error);
-      }
-    };
-    fetchDataFromFirestore();
-    console.log(data);
-  }, []);
-
+  // console.log(data);
   const handleTitleTextChange = (e) => {
     setTitleText(e.target.value);
   };
@@ -48,7 +35,24 @@ function ListWrapper({ id, title, items }) {
       alert("Vui lòng nhập giá trị");
     }
   };
+  console.log(items);
+  const handleDeleteJobItem = async (documentId) => {
+    try {
+      const documentRef = doc(db, "jobs", documentId);
+      await deleteDoc(documentRef);
 
+      // Cập nhật state data ngay lập tức và xóa dữ liệu trên Firebase
+      setItems((prevItems) =>
+        prevItems.filter((item) => item.id !== documentId)
+      );
+
+      console.log("Document deleted with id", documentRef.id);
+    } catch (error) {
+      console.error("Error deleting document", error);
+    }
+  };
+
+  console.log(data);
   return (
     <Droppable droppableId={id}>
       {(provided) => (
@@ -59,19 +63,25 @@ function ListWrapper({ id, title, items }) {
         >
           <h2 className="m-[8px] font-medium">{title}</h2>
           <div>
-            {items.map((item, index) => (
-              <Draggable draggableId={item.id} index={index} key={item.id}>
-                {(provided) => (
-                  <div
-                    {...provided.dragHandleProps}
-                    {...provided.draggableProps}
-                    ref={provided.innerRef}
-                  >
-                    <JobItems tagName={item.name} />
-                  </div>
-                )}
-              </Draggable>
-            ))}
+            {items &&
+              items.map((item, index) => (
+                <Draggable draggableId={item.id} index={index} key={item.id}>
+                  {(provided) => (
+                    <div
+                      {...provided.dragHandleProps}
+                      {...provided.draggableProps}
+                      ref={provided.innerRef}
+                    >
+                      <JobItems
+                        deleteJob={() => {
+                          handleDeleteJobItem(item.id);
+                        }}
+                        tagName={item.name}
+                      />
+                    </div>
+                  )}
+                </Draggable>
+              ))}
             {provided.placeholder}
           </div>
           <div

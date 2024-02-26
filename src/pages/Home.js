@@ -1,46 +1,61 @@
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import ListWrapper from "../components/ListWrapper";
 import NavBar from "../components/NavBar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase/config";
 
 const initialList = [
   {
     id: "1",
     title: "ToDo",
-    items: [
-      {
-        id: "ToDo-1",
-        name: "Learn Piano",
-      },
-      {
-        id: "ToDo-2",
-        name: "Play Football",
-      },
-    ],
+    items: [],
   },
   {
     id: "2",
     title: "Doing",
-    items: [
-      {
-        id: "Doing-1",
-        name: "Learn React",
-      },
-    ],
+    items: [],
   },
   {
     id: "3",
     title: "Done",
-    items: [
-      {
-        id: "Done-1",
-        name: "Learn Guitar",
-      },
-    ],
+    items: [],
   },
 ];
 
 function Home() {
+  useEffect(() => {
+    const fetchDataFromFirestore = async () => {
+      try {
+        const usersCollection = collection(db, "jobs");
+
+        const snapshot = await getDocs(usersCollection);
+        const dataArray =
+          snapshot.docs &&
+          snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+
+        setStores((prevStores) =>
+          prevStores.map((store) => {
+            const filteredData = dataArray.filter(
+              (data) => data.type === store.title
+            );
+
+            return {
+              ...store,
+              items: filteredData,
+            };
+          })
+        );
+      } catch (error) {
+        console.error("error getting document", error);
+      }
+    };
+    fetchDataFromFirestore();
+    // console.log(data);
+  }, []);
   const [stores, setStores] = useState(initialList);
 
   const handleDragAndDrop = (results) => {
@@ -100,6 +115,7 @@ function Home() {
     };
 
     setStores(newStores);
+    console.log(stores);
   };
 
   return (
@@ -113,21 +129,26 @@ function Home() {
               ref={provided.innerRef}
               className="flex justify-around"
             >
-              {stores.map((store, index) => (
-                <Draggable draggableId={store.id} index={index} key={store.id}>
-                  {(provided) => (
-                    <div
-                      className="w-full flex justify-around"
-                      title={store.title}
-                      {...provided.dragHandleProps}
-                      {...provided.draggableProps}
-                      ref={provided.innerRef}
-                    >
-                      <ListWrapper {...store} />
-                    </div>
-                  )}
-                </Draggable>
-              ))}
+              {stores &&
+                stores.map((store, index) => (
+                  <Draggable
+                    draggableId={store.id}
+                    index={index}
+                    key={store.id}
+                  >
+                    {(provided) => (
+                      <div
+                        className="w-full flex justify-around"
+                        title={store.title}
+                        {...provided.dragHandleProps}
+                        {...provided.draggableProps}
+                        ref={provided.innerRef}
+                      >
+                        <ListWrapper {...store} setItems={setStores} />
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
               {provided.placeholder}
             </div>
           )}
