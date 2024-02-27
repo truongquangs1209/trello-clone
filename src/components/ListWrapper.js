@@ -2,23 +2,15 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import JobItems from "./JobItems";
 import { faAdd, faClose } from "@fortawesome/free-solid-svg-icons";
 import { Draggable, Droppable } from "react-beautiful-dnd";
-import { useEffect, useState } from "react";
-import { v4 as uuidv4 } from "uuid";
+import { useState } from "react";
 import { db } from "../firebase/config";
-import {
-  getDocs,
-  addDoc,
-  collection,
-  doc,
-  deleteDoc,
-} from "firebase/firestore";
+import { addDoc, collection, doc, deleteDoc } from "firebase/firestore";
 
-function ListWrapper({ id, title, items, setItems }) {
+function ListWrapper({ id, title, items }) {
   const [data, setData] = useState(items);
   const [openTextArea, setOpenTextArea] = useState(false);
   const [titleText, setTitleText] = useState("");
 
-  // console.log(data);
   const handleTitleTextChange = (e) => {
     setTitleText(e.target.value);
   };
@@ -35,31 +27,16 @@ function ListWrapper({ id, title, items, setItems }) {
       alert("Vui lòng nhập giá trị");
     }
   };
-  // console.log(items);
+
   const handleDeleteJobItem = async (documentId) => {
     try {
       const documentRef = doc(db, "jobs", documentId);
       await deleteDoc(documentRef);
-      console.log(documentRef.id);
-      // const updateItem = items.filter((item) => item.id !== documentRef.id);
-      // console.log(documentRef);
-      const indexToRemove = items.findIndex((item) => item.id === documentId);
-      console.log(indexToRemove);
-      setData((prevItems) => prevItems.splice(indexToRemove, 1));
-      items.splice(indexToRemove, 1);
 
-      // setData((prevStores) =>
-      //   prevStores.map((store) => {
-      //     const filteredData = items.filter(
-      //       (data) => data.type === store.title
-      //     );
-      //     return {
-      //       ...store,
-      //       items: filteredData,
-      //     };
-      //   })
-      // );
+      const indexToRemove = items.findIndex((item) => item.id === documentId);
+      console.log(data);
       console.log(items);
+      setData(items.splice(indexToRemove, 1));
 
       console.log("Document deleted with id", documentRef.id);
     } catch (error) {
@@ -73,7 +50,7 @@ function ListWrapper({ id, title, items, setItems }) {
         <div
           {...provided.droppableProps}
           ref={provided.innerRef}
-          className="w-[90%] bg-[#ebecf0] rounded-md mb-8 overflow-hidden flex flex-col"
+          className="w-[90%] bg-[#ebecf0] h-fit min-w-[20%] rounded-md mb-8 overflow-hidden flex flex-col"
         >
           <h2 className="m-[8px] font-medium">{title}</h2>
           <div>
@@ -131,7 +108,9 @@ function ListWrapper({ id, title, items, setItems }) {
             }}
           >
             <FontAwesomeIcon icon={faAdd} />
-            <p className="text-[#cfd7e1]  font-bold pl-1">Add Tag</p>
+            <p className="text-[#cfd7e1] font-medium text-[12px] pl-1">
+              Add Tag
+            </p>
           </div>
         </div>
       )}

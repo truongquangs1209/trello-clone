@@ -4,6 +4,9 @@ import NavBar from "../components/NavBar";
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase/config";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faAdd, faClose } from "@fortawesome/free-solid-svg-icons";
+import { v4 as uuidv4 } from "uuid";
 
 const initialList = [
   {
@@ -24,6 +27,9 @@ const initialList = [
 ];
 
 function Home() {
+  const [titleList, setTitleList] = useState("");
+  const [stores, setStores] = useState(initialList);
+  const [openTextArea, setOpenTextArea] = useState(false);
   useEffect(() => {
     const fetchDataFromFirestore = async () => {
       try {
@@ -36,9 +42,8 @@ function Home() {
             id: doc.id,
             ...doc.data(),
           }));
-        console.log(dataArray);
+        // console.log(dataArray);
 
-        // console.log(dataArray.id);
         setStores((prevStores) =>
           prevStores.map((store) => {
             const filteredData = dataArray.filter(
@@ -57,9 +62,25 @@ function Home() {
     };
     fetchDataFromFirestore();
   }, []);
+  const handleTitleTextChange = (e) => {
+    setTitleList(e.target.value);
+  };
 
-  const [stores, setStores] = useState(initialList);
+  const handleAddList = () => {
+    if (titleList) {
+      const newList = {
+        id: uuidv4(),
+        title: titleList,
+        items: [],
+      };
+      setStores((prevStores) => [...prevStores, newList]);
+      console.log(stores);
+      setOpenTextArea(false);
+    }
 
+    setTitleList("");
+  };
+  console.log(openTextArea);
   const handleDragAndDrop = (results) => {
     const { source, destination, type } = results;
     console.log({ source, destination, type });
@@ -120,7 +141,7 @@ function Home() {
   };
 
   return (
-    <div className="w-[90%] h-auto bg-[#69dbf3]">
+    <div className="w-[90%] h-auto ]">
       <DragDropContext onDragEnd={handleDragAndDrop}>
         <NavBar />
         <Droppable droppableId="ROOT" type="group">
@@ -150,6 +171,51 @@ function Home() {
                     )}
                   </Draggable>
                 ))}
+              <div
+                className="w-[90%] h-fit mr-[1%]  p-2 bg-[#ebecf0] min-w-[20%]  rounded-md mb-8 overflow-hidden"
+                onClick={() => setOpenTextArea(true)}
+              >
+                <div
+                  style={
+                    openTextArea
+                      ? { display: "flex", flexDirection: "column" }
+                      : { display: "none" }
+                  }
+                >
+                  <textarea
+                    value={titleList}
+                    placeholder="Enter a title for this tag..."
+                    className="w-[93%] text-[12px] m-[8px] outline-none p-1"
+                    onChange={handleTitleTextChange}
+                  ></textarea>
+                  <div className="flex justify-around items-center mb-4">
+                    <button
+                      onClick={() => {
+                        handleAddList();
+                        setOpenTextArea(false);
+                      }}
+                      className="bg-[blue] rounded-md w-[40%] h-7 text-white"
+                    >
+                      Add list
+                    </button>
+                    <div onClick={() => setOpenTextArea(false)}>
+                      <FontAwesomeIcon icon={faClose} />
+                    </div>
+                  </div>
+                </div>
+                <div
+                  onClick={() => {
+                    setOpenTextArea(true);
+                  }}
+                  className="flex flex-row items-center cursor-pointer"
+                  style={
+                    openTextArea ? { display: "none" } : { display: "flex" }
+                  }
+                >
+                  <FontAwesomeIcon className="mr-1" icon={faAdd} />
+                  <h2 className="text-xs">Add New List</h2>
+                </div>
+              </div>
               {provided.placeholder}
             </div>
           )}
