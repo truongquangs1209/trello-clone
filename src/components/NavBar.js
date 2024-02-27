@@ -5,7 +5,7 @@ function NavBar() {
   const {
     user: { displayName, photoURL, auth },
   } = useContext(AuthContext);
-  console.log({ displayName, photoURL, auth });
+  // console.log({ displayName, photoURL, auth });
 
   return (
     <div className="flex bg-[#6ebaf8] mx-3 my-3 items-center justify-between">

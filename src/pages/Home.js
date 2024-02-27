@@ -36,7 +36,9 @@ function Home() {
             id: doc.id,
             ...doc.data(),
           }));
+        console.log(dataArray);
 
+        // console.log(dataArray.id);
         setStores((prevStores) =>
           prevStores.map((store) => {
             const filteredData = dataArray.filter(
@@ -54,8 +56,8 @@ function Home() {
       }
     };
     fetchDataFromFirestore();
-    // console.log(data);
   }, []);
+
   const [stores, setStores] = useState(initialList);
 
   const handleDragAndDrop = (results) => {
@@ -89,7 +91,6 @@ function Home() {
     const storeSourceIndex = stores.findIndex(
       (store) => store.id === source.droppableId
     );
-    console.log("storeSourceIndex", storeSourceIndex);
     const storeDestinationIndex = stores.findIndex(
       (store) => store.id === destination.droppableId
     );

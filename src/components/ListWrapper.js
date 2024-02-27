@@ -14,7 +14,7 @@ import {
 } from "firebase/firestore";
 
 function ListWrapper({ id, title, items, setItems }) {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState(items);
   const [openTextArea, setOpenTextArea] = useState(false);
   const [titleText, setTitleText] = useState("");
 
@@ -26,25 +26,40 @@ function ListWrapper({ id, title, items, setItems }) {
   const handleAddTag = async () => {
     const jobsCollection = collection(db, "jobs");
     if (titleText) {
-      const newItem = { id: uuidv4(), name: titleText, type: title };
+      const newItem = { name: titleText, type: title };
       const docRef = await addDoc(jobsCollection, newItem);
       console.log("Document written with ID: ", docRef.id);
-      items.push(newItem);
+      items.push({ id: docRef.id, ...newItem });
       setTitleText("");
     } else {
       alert("Vui lòng nhập giá trị");
     }
   };
-  console.log(items);
+  // console.log(items);
   const handleDeleteJobItem = async (documentId) => {
     try {
       const documentRef = doc(db, "jobs", documentId);
       await deleteDoc(documentRef);
+      console.log(documentRef.id);
+      // const updateItem = items.filter((item) => item.id !== documentRef.id);
+      // console.log(documentRef);
+      const indexToRemove = items.findIndex((item) => item.id === documentId);
+      console.log(indexToRemove);
+      setData((prevItems) => prevItems.splice(indexToRemove, 1));
+      items.splice(indexToRemove, 1);
 
-      // Cập nhật state data ngay lập tức và xóa dữ liệu trên Firebase
-      setItems((prevItems) =>
-        prevItems.filter((item) => item.id !== documentId)
-      );
+      // setData((prevStores) =>
+      //   prevStores.map((store) => {
+      //     const filteredData = items.filter(
+      //       (data) => data.type === store.title
+      //     );
+      //     return {
+      //       ...store,
+      //       items: filteredData,
+      //     };
+      //   })
+      // );
+      console.log(items);
 
       console.log("Document deleted with id", documentRef.id);
     } catch (error) {
@@ -52,7 +67,6 @@ function ListWrapper({ id, title, items, setItems }) {
     }
   };
 
-  console.log(data);
   return (
     <Droppable droppableId={id}>
       {(provided) => (
