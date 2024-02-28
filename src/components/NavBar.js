@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { AuthContext } from "../context/AuthProvider";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar } from "@fortawesome/free-solid-svg-icons";
+import InviteMember from "./inviteMember";
 
 function NavBar() {
   const {
@@ -14,6 +15,8 @@ function NavBar() {
         <h1 className="text-lg font-bold">My Trello</h1>
         <FontAwesomeIcon icon={faStar} />
       </div>
+      <InviteMember />
+
       <div className="flex items-center">
         <div className="flex items-center">
           <img

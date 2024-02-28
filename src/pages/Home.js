@@ -80,7 +80,7 @@ function Home() {
 
     setTitleList("");
   };
-  console.log(openTextArea);
+  // console.log(openTextArea);
   const handleDragAndDrop = (results) => {
     const { source, destination, type } = results;
     console.log({ source, destination, type });

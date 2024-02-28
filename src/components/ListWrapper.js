@@ -2,14 +2,51 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import JobItems from "./JobItems";
 import { faAdd, faClose } from "@fortawesome/free-solid-svg-icons";
 import { Draggable, Droppable } from "react-beautiful-dnd";
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { db } from "../firebase/config";
-import { addDoc, collection, doc, deleteDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  doc,
+  deleteDoc,
+  getDocs,
+} from "firebase/firestore";
+import { AuthContext } from "../context/AuthProvider";
 
 function ListWrapper({ id, title, items }) {
   const [data, setData] = useState(items);
   const [openTextArea, setOpenTextArea] = useState(false);
   const [titleText, setTitleText] = useState("");
+  const [members, setMembers] = useState([]);
+
+  const {
+    user: { displayName, photoURL, email },
+  } = useContext(AuthContext);
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const memberCollection = collection(db, "member");
+        const snapshot = await getDocs(memberCollection);
+
+        const memberList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          userId: doc.data().userId,
+          email: doc.data().email,
+          photoURL: doc.data().photoURL,
+        }));
+
+        setMembers(memberList);
+      } catch (error) {
+        console.error("Error fetching members:", error);
+      }
+    };
+
+    fetchMembers();
+  }, [data]);
+
+  console.log(email);
+  console.log(members);
 
   const handleTitleTextChange = (e) => {
     setTitleText(e.target.value);
@@ -22,6 +59,7 @@ function ListWrapper({ id, title, items }) {
       const docRef = await addDoc(jobsCollection, newItem);
       console.log("Document written with ID: ", docRef.id);
       items.push({ id: docRef.id, ...newItem });
+      setData((prevData) => [...prevData, { id: docRef.id, ...newItem }]);
       setTitleText("");
     } else {
       alert("Vui lòng nhập giá trị");
@@ -54,7 +92,7 @@ function ListWrapper({ id, title, items }) {
         >
           <h2 className="m-[8px] font-medium">{title}</h2>
           <div>
-            {items &&
+            {members.some((member) => member.email === email) &&
               items.map((item, index) => (
                 <Draggable draggableId={item.id} index={index} key={item.id}>
                   {(provided) => (
