@@ -4,7 +4,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import { db } from "../firebase/config";
 import { addDoc, collection, getDocs } from "firebase/firestore";
-import { AuthContext } from "../context/AuthProvider";
 
 function InviteMember() {
   const [form] = Form.useForm();
@@ -12,11 +11,6 @@ function InviteMember() {
   const [value, setValue] = useState([]);
   const [options, setOptions] = useState([]);
   const [members, setMembers] = useState([]);
-
-  const {
-    user: { displayName, photoURL, email },
-  } = useContext(AuthContext);
-  //   console.log(displayName);
 
   const handleClick = () => {
     setIsInviteMemberVisible(true);
@@ -63,9 +57,7 @@ function InviteMember() {
     };
     fetchUserList();
   }, [members]);
-  //   console.log(options);
 
-  //   console.log(options);
   const handleOk = () => {
     const memberCollection = collection(db, "member");
     value.forEach(async (selectedValue) => {
@@ -82,13 +74,13 @@ function InviteMember() {
     setValue([]);
     setIsInviteMemberVisible(false);
   };
-  //   console.log(value);
+
   const handleCancel = () => {
     form.resetFields();
     setValue([]);
     setIsInviteMemberVisible(false);
   };
-  //   console.log(members);
+
   return (
     <div className="flex items-center justify-between">
       <div

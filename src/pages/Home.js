@@ -14,7 +14,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faAdd, faClose } from "@fortawesome/free-solid-svg-icons";
 import { v4 as uuidv4 } from "uuid";
 import { AuthContext } from "../context/AuthProvider";
-import { addItemToCollection } from "../firebase/services";
+import { addItemToCollection, useDataFetching } from "../firebase/services";
 
 function Home() {
   const [titleList, setTitleList] = useState("");
@@ -26,46 +26,13 @@ function Home() {
     user: { email },
   } = useContext(AuthContext);
 
-  useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        const memberCollection = collection(db, "member");
-        const snapshot = await getDocs(memberCollection);
+  //fetching data member
+  useDataFetching(setMembers, "member");
 
-        const memberList = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          userId: doc.data().userId,
-          email: doc.data().email,
-          photoURL: doc.data().photoURL,
-        }));
+  //fetching data listJobs
+  useDataFetching(setStores, "listJobs");
 
-        setMembers(memberList);
-      } catch (error) {
-        console.error("Error fetching members:", error);
-      }
-    };
-
-    fetchMembers();
-  }, []);
-
-  useEffect(() => {
-    const fetchListJobs = async () => {
-      try {
-        const listJobsCollection = collection(db, "listJobs");
-        const snapshot = await getDocs(listJobsCollection);
-
-        const listJobsDb = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          title: doc.data().title,
-          items: doc.data().item,
-        }));
-        setStores(listJobsDb);
-      } catch (error) {
-        console.error("error getting document", error);
-      }
-    };
-    fetchListJobs();
-  }, []);
+  // useDataFetching(setStores, "jobs");
 
   useEffect(() => {
     const fetchJobsFromFirestore = async () => {
@@ -141,7 +108,7 @@ function Home() {
       console.error("Error deleting document", error);
     }
   };
-  console.log(stores);
+  // console.log(stores);
   const handleDragAndDrop = async (results) => {
     const { source, destination, type } = results;
     if (!destination) return;

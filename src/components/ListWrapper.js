@@ -6,7 +6,7 @@ import { useContext, useEffect, useState } from "react";
 import { db } from "../firebase/config";
 import { collection, doc, deleteDoc, getDocs } from "firebase/firestore";
 import { AuthContext } from "../context/AuthProvider";
-import { addItemToCollection } from "../firebase/services";
+import { addItemToCollection, useDataFetching } from "../firebase/services";
 
 function ListWrapper({ id, title, items, handleDeleteList }) {
   const [data, setData] = useState(items);
@@ -18,27 +18,8 @@ function ListWrapper({ id, title, items, handleDeleteList }) {
     user: { email },
   } = useContext(AuthContext);
 
-  useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        const memberCollection = collection(db, "member");
-        const snapshot = await getDocs(memberCollection);
-
-        const memberList = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          userId: doc.data().userId,
-          email: doc.data().email,
-          photoURL: doc.data().photoURL,
-        }));
-
-        setMembers(memberList);
-      } catch (error) {
-        console.error("Error fetching members:", error);
-      }
-    };
-
-    fetchMembers();
-  }, [data]);
+  //fetching data
+  useDataFetching(setMembers, "member");
 
   const handleTitleTextChange = (e) => {
     setTitleText(e.target.value);
