@@ -4,23 +4,18 @@ import { faAdd, faClose } from "@fortawesome/free-solid-svg-icons";
 import { Draggable, Droppable } from "react-beautiful-dnd";
 import { useContext, useEffect, useState } from "react";
 import { db } from "../firebase/config";
-import {
-  addDoc,
-  collection,
-  doc,
-  deleteDoc,
-  getDocs,
-} from "firebase/firestore";
+import { collection, doc, deleteDoc, getDocs } from "firebase/firestore";
 import { AuthContext } from "../context/AuthProvider";
+import { addItemToCollection } from "../firebase/services";
 
-function ListWrapper({ id, title, items }) {
+function ListWrapper({ id, title, items, handleDeleteList }) {
   const [data, setData] = useState(items);
   const [openTextArea, setOpenTextArea] = useState(false);
   const [titleText, setTitleText] = useState("");
   const [members, setMembers] = useState([]);
 
   const {
-    user: { displayName, photoURL, email },
+    user: { email },
   } = useContext(AuthContext);
 
   useEffect(() => {
@@ -45,21 +40,16 @@ function ListWrapper({ id, title, items }) {
     fetchMembers();
   }, [data]);
 
-  console.log(email);
-  console.log(members);
-
   const handleTitleTextChange = (e) => {
     setTitleText(e.target.value);
   };
 
+  //Add tag
   const handleAddTag = async () => {
-    const jobsCollection = collection(db, "jobs");
     if (titleText) {
       const newItem = { name: titleText, type: title };
-      const docRef = await addDoc(jobsCollection, newItem);
-      console.log("Document written with ID: ", docRef.id);
-      items.push({ id: docRef.id, ...newItem });
-      setData((prevData) => [...prevData, { id: docRef.id, ...newItem }]);
+      addItemToCollection("jobs", newItem, setData, items);
+      setOpenTextArea(false);
       setTitleText("");
     } else {
       alert("Vui lòng nhập giá trị");
@@ -90,7 +80,11 @@ function ListWrapper({ id, title, items }) {
           ref={provided.innerRef}
           className="w-[90%] bg-[#ebecf0] h-fit min-w-[20%] rounded-md mb-8 overflow-hidden flex flex-col"
         >
-          <h2 className="m-[8px] font-medium">{title}</h2>
+          <div className="flex items-center justify-around">
+            <h2 className="m-[8px] font-medium">{title}</h2>
+            <FontAwesomeIcon onClick={handleDeleteList} icon={faClose} />
+          </div>
+
           <div>
             {members.some((member) => member.email === email) &&
               items.map((item, index) => (
