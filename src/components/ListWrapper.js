@@ -3,10 +3,12 @@ import JobItems from "./JobItems";
 import { faAdd, faClose } from "@fortawesome/free-solid-svg-icons";
 import { Draggable, Droppable } from "react-beautiful-dnd";
 import { useContext, useEffect, useState } from "react";
-import { db } from "../firebase/config";
-import { collection, doc, deleteDoc, getDocs } from "firebase/firestore";
 import { AuthContext } from "../context/AuthProvider";
-import { addItemToCollection, useDataFetching } from "../firebase/services";
+import {
+  addItemToCollection,
+  deleteItem,
+  useDataFetching,
+} from "../firebase/services";
 
 function ListWrapper({ id, title, items, handleDeleteList }) {
   const [data, setData] = useState(items);
@@ -39,15 +41,11 @@ function ListWrapper({ id, title, items, handleDeleteList }) {
 
   const handleDeleteJobItem = async (documentId) => {
     try {
-      const documentRef = doc(db, "jobs", documentId);
-      await deleteDoc(documentRef);
+      deleteItem("jobs", documentId);
 
       const indexToRemove = items.findIndex((item) => item.id === documentId);
-      console.log(data);
-      console.log(items);
       setData(items.splice(indexToRemove, 1));
-
-      console.log("Document deleted with id", documentRef.id);
+      console.log("Document deleted with id", documentId);
     } catch (error) {
       console.error("Error deleting document", error);
     }
@@ -63,7 +61,11 @@ function ListWrapper({ id, title, items, handleDeleteList }) {
         >
           <div className="flex items-center justify-around">
             <h2 className="m-[8px] font-medium">{title}</h2>
-            <FontAwesomeIcon onClick={handleDeleteList} icon={faClose} />
+            <FontAwesomeIcon
+              className="p-2 hover:bg-[#ccc] rounded-xl"
+              onClick={handleDeleteList}
+              icon={faClose}
+            />
           </div>
 
           <div>

@@ -1,9 +1,10 @@
-import React, { useContext, useEffect, useState } from "react";
-import { Form, Modal, Select, Spin, Avatar, Tooltip } from "antd";
+import React, { useEffect, useState } from "react";
+import { Form, Modal, Select, Avatar, Tooltip } from "antd";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import { db } from "../firebase/config";
 import { addDoc, collection, getDocs } from "firebase/firestore";
+import { useDataFetching } from "../firebase/services";
 
 function InviteMember() {
   const [form] = Form.useForm();
@@ -16,27 +17,11 @@ function InviteMember() {
     setIsInviteMemberVisible(true);
   };
 
-  useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        const memberCollection = collection(db, "member");
-        const snapshot = await getDocs(memberCollection);
+  //Fetching data member
+  useDataFetching(setMembers, "member");
 
-        const memberList = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          userId: doc.data().userId,
-          email: doc.data().email,
-          photoURL: doc.data().photoURL,
-        }));
-
-        setMembers(memberList);
-      } catch (error) {
-        console.error("Error fetching members:", error);
-      }
-    };
-
-    fetchMembers();
-  }, []);
+  //Fetching data users
+  // useDataFetching(setOptions, "users", members);
 
   useEffect(() => {
     const fetchUserList = async () => {
@@ -58,6 +43,10 @@ function InviteMember() {
     fetchUserList();
   }, [members]);
 
+  const filterMember = options.filter(
+    (opt) => !members.find((member) => member.userId === opt.value)
+  );
+
   const handleOk = () => {
     const memberCollection = collection(db, "member");
     value.forEach(async (selectedValue) => {
@@ -67,6 +56,7 @@ function InviteMember() {
         email: selectedUser.email,
         photoURL: selectedUser.photoURL,
       });
+      window.location.reload();
       setMembers([...members, selectedUser]);
     });
 
@@ -88,7 +78,7 @@ function InviteMember() {
         className="border text-[12px] border-solid mr-4 border-black p-1 rounded-xl hover:bg-gray-400 transition-all"
       >
         <FontAwesomeIcon icon={faUserPlus} />
-        <span>Mời</span>
+        <span>Tham gia</span>
       </div>
       <Avatar.Group size="small" maxCount={2}>
         {members.map((member) => (
@@ -116,10 +106,9 @@ function InviteMember() {
               filterOption={false}
               onChange={(newValue) => setValue(newValue)}
               style={{ width: "100%" }}
-              //   options={options}
             >
-              {options &&
-                options.map((opt) => (
+              {filterMember &&
+                filterMember.map((opt) => (
                   <Select.Option key={opt.value} value={opt.value}>
                     <Avatar size="small" src={opt.photoURL}>
                       {opt.photoURL ? "" : opt.label.charAt(0)?.toUpperCase()}

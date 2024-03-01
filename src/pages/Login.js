@@ -1,17 +1,13 @@
 import { GoogleAuthProvider, signInWithPopup, getAuth } from "firebase/auth";
-import React, { useContext } from "react";
-import { AuthContext } from "../context/AuthProvider";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase/config";
 
 function Login() {
-  const auth = getAuth();
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
 
   const handleLoginWithGoogle = async () => {
-    // const {additionnalUserInfo, user} = await auth.signInWithPopup(go)
     const auth = getAuth();
     const provider = new GoogleAuthProvider();
     try {
@@ -26,19 +22,16 @@ function Login() {
         uid,
         photoURL,
       });
-
+      if (user?.uid) {
+        navigate("/");
+        return;
+      }
       console.log(
         "Đăng nhập thành công và lưu thông tin người dùng vào Firestore"
       );
     } catch (error) {
       console.error("Đăng nhập không thành công:", error);
     }
-
-    if (user?.uid) {
-      navigate("/");
-      return;
-    }
-    console.log(user);
   };
   return (
     <div className="w-full flex flex-col items-center justify-center ">

@@ -3,8 +3,8 @@ import ListWrapper from "../components/ListWrapper";
 import NavBar from "../components/NavBar";
 import { useContext, useEffect, useState } from "react";
 import {
+  addDoc,
   collection,
-  deleteDoc,
   doc,
   getDocs,
   updateDoc,
@@ -12,9 +12,8 @@ import {
 import { db } from "../firebase/config";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faAdd, faClose } from "@fortawesome/free-solid-svg-icons";
-import { v4 as uuidv4 } from "uuid";
 import { AuthContext } from "../context/AuthProvider";
-import { addItemToCollection, useDataFetching } from "../firebase/services";
+import { deleteItem, useDataFetching } from "../firebase/services";
 
 function Home() {
   const [titleList, setTitleList] = useState("");
@@ -32,26 +31,21 @@ function Home() {
   //fetching data listJobs
   useDataFetching(setStores, "listJobs");
 
-  // useDataFetching(setStores, "jobs");
-
   useEffect(() => {
     const fetchJobsFromFirestore = async () => {
       try {
         const usersCollection = collection(db, "jobs");
         const snapshot = await getDocs(usersCollection);
-        const dataArray =
-          snapshot.docs &&
-          snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
+        const dataArray = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
         setStores((prevStores) =>
           prevStores.map((store) => {
             const filteredData = dataArray.filter(
               (data) => data.type === store.title
             );
-
             return {
               ...store,
               items: filteredData,
@@ -63,21 +57,18 @@ function Home() {
       }
     };
     fetchJobsFromFirestore();
-  }, []);
-
-  const handleTitleTextChange = (e) => {
-    setTitleList(e.target.value);
-  };
+  }, [members]);
 
   const handleAddList = async () => {
     try {
       if (titleList) {
         const newList = {
-          id: uuidv4(),
           title: titleList,
           items: [],
         };
-        addItemToCollection("listJobs", newList, setStores);
+        const dataCollection = collection(db, "listJobs");
+        const docRef = await addDoc(dataCollection, newList);
+        newList.id = docRef.id;
         setStores([...stores, newList]);
         setOpenTextArea(false);
       }
@@ -99,8 +90,7 @@ function Home() {
 
   const handleDeleteList = async (listId) => {
     try {
-      const docRef = doc(db, "listJobs", listId);
-      await deleteDoc(docRef);
+      deleteItem("listJobs", listId);
       setStores((prevStores) =>
         prevStores.filter((store) => store.id !== listId)
       );
@@ -108,7 +98,7 @@ function Home() {
       console.error("Error deleting document", error);
     }
   };
-  // console.log(stores);
+
   const handleDragAndDrop = async (results) => {
     const { source, destination, type } = results;
     if (!destination) return;
@@ -121,14 +111,15 @@ function Home() {
 
     if (type === "group") {
       const reorderedStores = [...stores];
-      console.log("reorderdStores", reorderedStores);
+      console.log("reorderedStores", reorderedStores);
       const storeSourceIndex = source.index;
       const storeDestinatonIndex = destination.index;
 
       const [removedStore] = reorderedStores.splice(storeSourceIndex, 1);
       reorderedStores.splice(storeDestinatonIndex, 0, removedStore);
 
-      return setStores(reorderedStores);
+      setStores([...reorderedStores]);
+      return;
     }
 
     const itemSourceIndex = source.index;
@@ -152,8 +143,10 @@ function Home() {
 
     const itemIdToUpdate = deletedItem.id;
     const newType = stores[storeDestinationIndex].title;
+
     // Cập nhật type trên server khi kéo thả
     updateItemTypeInFirestore(itemIdToUpdate, newType);
+
     const newStores = [...stores];
 
     newStores[storeSourceIndex] = {
@@ -164,23 +157,23 @@ function Home() {
       ...stores[storeDestinationIndex],
       items: newDestinationItems,
     };
-    setStores(newStores);
-  };
 
+    setStores([...newStores]);
+  };
+  console.log(openTextArea);
   return (
     <div className="w-[90%] h-auto ]">
       <DragDropContext onDragEnd={handleDragAndDrop}>
-        <NavBar />
+        <NavBar stores={stores} setStores={setStores} />
         <Droppable droppableId="ROOT" type="group">
           {(provided) => (
             <div
               {...provided.droppableProps}
               ref={provided.innerRef}
-              className="flex justify-around"
+              className="flex"
             >
               {members.some((member) => member.email === email) &&
-                stores &&
-                stores.map((store, index) => (
+                stores?.map((store, index) => (
                   <Draggable
                     draggableId={store.id}
                     index={index}
@@ -188,7 +181,7 @@ function Home() {
                   >
                     {(provided) => (
                       <div
-                        className="w-full flex justify-around"
+                        className="w-[25%] flex justify-around"
                         title={store.title}
                         {...provided.dragHandleProps}
                         {...provided.draggableProps}
@@ -207,13 +200,14 @@ function Home() {
                 ))}
               {provided.placeholder}
               <div
-                className="w-[90%] h-fit mr-[1%]  p-2 bg-[#ebecf0] min-w-[20%]  rounded-md mb-8 overflow-hidden"
+                className="w-[25%] h-fit mr-[1%]  p-2 bg-[#ebecf0] min-w-[20%]  rounded-md mb-8 overflow-hidden"
                 style={
-                  stores && stores.length < 5
+                  members.some((member) => member.email === email) &&
+                  stores &&
+                  stores.length < 5
                     ? { display: "block" }
                     : { display: "none" }
                 }
-                onClick={() => setOpenTextArea(true)}
               >
                 <div
                   style={
@@ -222,32 +216,38 @@ function Home() {
                       : { display: "none" }
                   }
                 >
-                  <textarea
+                  <input
                     value={titleList}
                     placeholder="Enter a title for this tag..."
                     className="w-[93%] text-[12px] m-[8px] outline-none p-1"
-                    onChange={handleTitleTextChange}
-                  ></textarea>
+                    onChange={(e) => setTitleList(e.target.value)}
+                  ></input>
                   <div className="flex justify-around items-center mb-4">
                     <button
                       onClick={() => {
                         handleAddList();
                         setOpenTextArea(false);
                       }}
-                      className="bg-[#616167] rounded-md w-[40%] h-7 text-white"
+                      className="bg-[#b8b8be] hover:bg-[#a5a5af] transition-all rounded-md w-[40%] h-7 text-white"
                     >
                       Add list
                     </button>
-                    <div onClick={() => setOpenTextArea(false)}>
+                    <div
+                      className="cursor-pointer hover:bg-[#ccc] px-1 transition-all"
+                      onClick={() => {
+                        setOpenTextArea(false);
+                      }}
+                    >
                       <FontAwesomeIcon icon={faClose} />
                     </div>
                   </div>
                 </div>
+
                 <div
                   onClick={() => {
                     setOpenTextArea(true);
                   }}
-                  className="flex flex-row items-center cursor-pointer"
+                  className=" flex flex-row items-center cursor-pointer"
                   style={
                     openTextArea ? { display: "none" } : { display: "flex" }
                   }

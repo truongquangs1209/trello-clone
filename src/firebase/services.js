@@ -1,8 +1,19 @@
-import { addDoc, collection, getDocs } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+} from "firebase/firestore";
 import { db } from "./config";
 import { useEffect } from "react";
 
-export const useDataFetching = (setData, collectionName, dependencyArray) => {
+export const useDataFetching = (
+  setData,
+  collectionName,
+  filterData,
+  dependencyArray
+) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -13,7 +24,7 @@ export const useDataFetching = (setData, collectionName, dependencyArray) => {
           id: doc.id,
           ...doc.data(),
         }));
-        setData(data);
+        setData(filterData ? filterData : data);
       } catch (error) {
         console.error(`Error fetching data from ${collectionName}:`, error);
       }
@@ -34,6 +45,9 @@ export const addItemToCollection = async (
     const dataCollection = collection(db, collectionName);
     const docRef = await addDoc(dataCollection, data);
     items.push({ id: docRef.id, ...data });
+    data.id = docRef.id;
+
+    //
 
     if (setCollection) {
       // Nếu setCollection được truyền vào, cập nhật state hoặc dữ liệu liên quan
@@ -44,4 +58,9 @@ export const addItemToCollection = async (
   } catch (error) {
     console.error("Error adding item to collection:", error);
   }
+};
+
+export const deleteItem = async (collectionName, id) => {
+  const docRef = doc(db, collectionName, id);
+  await deleteDoc(docRef);
 };
