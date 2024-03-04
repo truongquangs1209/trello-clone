@@ -28,10 +28,10 @@ const analytics = getAnalytics(app);
 const auth = getAuth(app);
 
 const db = getFirestore(app);
-if (process.env.NODE_ENV === "development") {
-  // Kết nối với Firestore emulator
-  connectFirestoreEmulator(db, "localhost", 8080);
-  connectAuthEmulator(auth, "http://localhost:9099");
-}
+// if (process.env.NODE_ENV === "development") {
+//   // Kết nối với Firestore emulator
+//   connectFirestoreEmulator(db, "localhost", 8080);
+//   connectAuthEmulator(auth, "http://localhost:9099");
+// }
 
 export { db, auth };
